@@ -1,0 +1,62 @@
+pipeline {
+    agent any
+
+    environment {
+        // 环境变量
+        HARBOR_URL = '192.168.190.10:8858'
+        HARBOR_PROJECT = 'library'
+        GIT_CREDENTIAL_ID = 'git-user-pass'
+        DOCKER_CREDENTIALS_ID = 'harbor-user-pass' // 在 Jenkins 中配置的 Docker 凭据
+//         K8S_CONTEXT = 'your-kubernetes-context' // Kubernetes 上下文
+//         K8S_NAMESPACE = 'your-kubernetes-namespace'
+        KUBECONFIG_CREDENTIAL_ID = 'ae68ea48-982b-4f9a-9043-984c21328fbd'
+        IMAGE_NAME = "${HARBOR_URL}/${HARBOR_PROJECT}/${env.JOB_NAME}:${env.BUILD_NUMBER}"
+    }
+
+    stages {
+        stage('Clone Repository') {
+            steps {
+                git branch: 'main', url: 'http://192.168.190.10:28080/root/resource.git', credentialsId: "${GIT_CREDENTIAL_ID}"
+            }
+        }
+
+//         stage('Build Docker Image') {
+//             steps {
+//                 script {
+//                     docker.build("${IMAGE_NAME}")
+//                 }
+//             }
+//         }
+
+//         stage('Push to Harbor') {
+//             steps {
+//                 script {
+//                     docker.withRegistry("https://${HARBOR_URL}", "${DOCKER_CREDENTIALS_ID}") {
+//                         docker.image("${IMAGE_NAME}").push()
+//                     }
+//                 }
+//             }
+//         }
+
+//         stage('Deploy to Kubernetes') {
+//             steps {
+//                 script {
+//                     sh """
+//                     kubectl config use-context ${K8S_CONTEXT}
+//                     kubectl set image deployment/your-deployment-name your-container-name=${IMAGE_NAME} -n ${K8S_NAMESPACE}
+//                     kubectl rollout status deployment/your-deployment-name -n ${K8S_NAMESPACE}
+//                     """
+//                 }
+//             }
+//         }
+    }
+
+    post {
+        success {
+            echo 'Deployment successful!'
+        }
+        failure {
+            echo 'Deployment failed!'
+        }
+    }
+}
