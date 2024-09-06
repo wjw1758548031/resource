@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: main-api
+  labels:
+    app: main-api
+spec:
+  replicas: 2
+  revisionHistoryLimit: 5
+  selector:
+    matchLabels:
+      app: main-api
+  template:
+    metadata:
+      labels:
+        app: main-api
+    spec:
+      containers:
+        - name: main-api
+          image: swr.cn-south-1.myhuaweicloud.com/peta-dev/bach-activity-rpc:202303082250
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sh","-c","sleep 5"]
+          ports:
+            - containerPort: 8081
+          readinessProbe:
+            tcpSocket:
+              port: 8081
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 8081
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          volumeMounts:
+            - name: timezone
+              mountPath: /etc/localtime
+      imagePullSecrets:
+        - name: default-secret
+      volumes:
+        - name: timezone
+          hostPath:
+            path: /usr/share/zoneinfo/Asia/Shanghai
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: main-api
+spec:
+  type: NodePort  # 设置服务类型为 NodePort
+  ports:
+    - port: 8081  # 服务的端口
+      targetPort: 8081  # Pod 的容器端口
+      nodePort: 30001   # 在节点上暴露的端口（可以指定范围为 30000-32767）
+  selector:
+    app: main-api
+
